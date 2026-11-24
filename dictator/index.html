@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Jus Dictator</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#17181a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#f4f4f1;--card:#fff;--ink:#1d1d1b;--mute:#6b6b66;--line:#ddddd6;--acc:#2f5fd0;--accink:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181a;--card:#222427;--ink:#ececea;--mute:#9a9a95;--line:#34363a;--acc:#6f95f0;--accink:#0d1220;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181a;--card:#222427;--ink:#ececea;--mute:#9a9a95;--line:#34363a;--acc:#6f95f0;--accink:#0d1220;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;height:100dvh;display:flex;flex-direction:column}
+header{position:relative;display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:16px;margin:0;flex:1}
+button,select,input{font:inherit;color:inherit}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+#main{flex:1;min-height:0;position:relative;display:flex;flex-direction:column}
+#stage{flex:1;min-height:0;min-width:0;overflow:auto;padding:4px;display:flex;touch-action:pan-x pan-y}
+#wrap{margin:auto;display:flex}
+canvas{background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.18);display:block}
+#empty{color:var(--mute);text-align:center;margin-top:12vh}
+#panel{background:var(--card);border-top:1px solid var(--line);padding:6px 12px 8px;font-size:14px}
+#chunk{min-height:26px;text-align:center;font-size:19px;font-weight:600}
+#chunk.hide{visibility:hidden}
+.row{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;margin:4px 0}
+.row .btn{flex:1;min-width:0;padding:10px 0;font-size:18px;text-align:center}
+.row .btn.pri{flex:1.5}
+.row label{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:13px}
+select,input[type=number]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+input[type=number]{width:64px}
+#voice{max-width:230px}
+#pg{color:var(--mute);font-size:13px}
+#box{position:relative;line-height:0;cursor:pointer}
+#ov{position:absolute;inset:0;pointer-events:none}
+.hl{position:absolute;background:rgba(255,196,0,.5);border-radius:3px;mix-blend-mode:multiply;box-shadow:0 0 0 1px rgba(230,150,0,.6)}
+#menu{position:absolute;right:10px;top:100%;margin-top:6px;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;width:min(330px,calc(100vw - 20px));max-height:70dvh;overflow:auto;box-shadow:0 8px 28px rgba(0,0,0,.35);display:grid;gap:12px}
+#menu label{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+#menu select{max-width:190px}
+#menu input[type=checkbox]{width:20px;height:20px}
+.btn{padding:4px 9px;border-radius:8px}
+header{padding:4px 10px;gap:8px}header h1{font-size:15px}
+#panel{padding:3px 8px 4px}
+.row{gap:4px;margin:2px 0}.row .btn{padding:5px 0;font-size:16px}
+#chunk{min-height:20px;font-size:16px}
+select,input[type=number]{padding:3px 6px}
+#menu{padding:8px;gap:6px;width:min(300px,calc(100vw - 20px))}#menu label{font-size:13px}
+#zoom{position:absolute;right:8px;top:6px;z-index:6;display:flex;gap:3px;opacity:.92}
+#zoom .btn{padding:1px 9px;font-size:15px;background:var(--card)}
+body{touch-action:pan-x pan-y}
+@media (orientation:landscape) and (max-height:560px){header{padding:2px 8px}header .btn{padding:2px 8px}#chunk{font-size:14px;min-height:18px}.row .btn{padding:3px 0;font-size:15px}}
+#pg{font-size:11px;line-height:1.15;text-align:right;color:var(--mute)}
+#menu .sl{display:flex;align-items:center;gap:6px;font-size:13px}
+#menu .sl span{min-width:86px}
+#menu .sl input[type=range]{flex:1;min-width:0}
+#menu .sl input[type=number]{width:58px}
+#stats{font-size:12px;color:var(--mute);line-height:1.45}
+#pgR{width:100%;height:14px;margin:0 0 2px;display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1>Jus Dictator</h1>
+  <span id="pg">– / –</span>
+  <label class="btn pri" for="file">Upload PDF</label>
+  <input id="file" type="file" accept="application/pdf" hidden>
+  <button class="btn" id="dots" aria-label="Options" title="Options">⋮</button>
+  <div id="menu" hidden>
+    <div id="stats"></div>
+    <label>Go to page <input id="goto" type="number" min="1" value="1"></label>
+    <label>Words at a time <input id="n" type="number" min="1" value="3"></label>
+    <div class="sl"><span>Writing speed</span><input type="range" id="wpmR" min="1" max="300" value="25"><input type="number" id="wpm" min="1" value="25"><small>wpm</small></div>
+    <div class="sl"><span>Speech speed</span><input type="range" id="rateR" min="0.1" max="5" step="0.05" value="1"><input type="number" id="rate" min="0.1" max="10" step="0.05" value="1"><small>×</small></div>
+    <label>Voice <select id="voice"></select></label>
+    <label>Say punctuation aloud <input type="checkbox" id="punc" checked></label>
+    <label>Break at commas &amp; full stops <input type="checkbox" id="brk" checked></label>
+    <label>Say “capital” at sentence start <input type="checkbox" id="cap"></label>
+    <label>Show words <input type="checkbox" id="show" checked></label>
+  </div>
+</header>
+
+<div id="main">
+<div id="stage"><div id="wrap">
+  <div id="empty">Upload a PDF to start.<br>The voice will read a few words at a time, then wait for you to write.<br>Tap any word on the page to start from there.</div>
+  <div id="box"><canvas id="cv" hidden></canvas><div id="ov"></div></div>
+</div></div>
+
+<div id="zoom">
+  <button class="btn" id="zo" aria-label="Zoom out">−</button>
+  <button class="btn" id="zr" aria-label="Reset zoom">100%</button>
+  <button class="btn" id="zi" aria-label="Zoom in">+</button>
+</div>
+<div id="panel">
+  <div id="chunk" class="hide"></div>
+  <input type="range" id="pgR" min="1" max="1" value="1" aria-label="Page scroller">
+  <div class="row">
+    <button class="btn" id="prevPg" title="Previous page" aria-label="Previous page">⏮</button>
+    <button class="btn" id="back" title="Previous words" aria-label="Previous words">⏪</button>
+    <button class="btn" id="rep" title="Repeat" aria-label="Repeat">↻</button>
+    <button class="btn pri" id="play" title="Play / pause" aria-label="Play or pause">▶</button>
+    <button class="btn" id="next" title="Next words" aria-label="Next words">⏩</button>
+    <button class="btn" id="nextPg" title="Next page" aria-label="Next page">⏭</button>
+  </div>
+</div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const $ = id => document.getElementById(id);
+const S = { zoom:1, fit:1, doc:null, key:"", page:1, words:[], idx:0, playing:false, timer:null, tok:0, last:"" };
+const syn = window.speechSynthesis;
+
+function save(){ try{ if(S.key) localStorage.setItem("dict:"+S.key, JSON.stringify({p:S.page,i:S.idx})); }catch(e){} }
+function saveSettings(){ try{ localStorage.setItem("dict:settings", JSON.stringify({n:$("n").value,wpm:$("wpm").value,rate:$("rate").value,voice:$("voice").value,show:$("show").checked,punc:$("punc").checked,brk:$("brk").checked,cap:$("cap").checked})); }catch(e){} }
+function loadSettings(){ try{ const s=JSON.parse(localStorage.getItem("dict:settings")||"null"); if(s){ $("n").value=s.n; $("wpm").value=s.wpm||25; $("rate").value=s.rate||1; $("show").checked=s.show; $("punc").checked=s.punc!==false; $("brk").checked=s.brk!==false; $("cap").checked=!!s.cap; $("wpmR").value=$("wpm").value; $("rateR").value=$("rate").value; S.voicePref=s.voice; } }catch(e){} }
+
+function fillVoices(){
+  const v = syn.getVoices(); if(!v.length) return;
+  const cur = $("voice").value || S.voicePref;
+  $("voice").innerHTML = v.map((x,i)=>`<option value="${x.name}">${x.name} (${x.lang})</option>`).join("");
+  const pick = v.find(x=>x.name===cur) || v.find(x=>x.lang.startsWith("en")) || v[0];
+  $("voice").value = pick.name;
+}
+loadSettings(); fillVoices(); syn.onvoiceschanged = fillVoices;
+
+let rz, rtask;
+async function draw(){
+  if(!S.pg) return;
+  const st=$("stage"), cs=getComputedStyle(st);
+  const w=st.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const h=st.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  if(w<20||h<20) return;
+  const base=S.pg.getViewport({scale:1}), fit=Math.min(w/base.width,h/base.height), dpr=window.devicePixelRatio||1;
+  S.fit=fit; const mx=Math.sqrt(16e6/(base.width*base.height));
+  const vp=S.pg.getViewport({scale:Math.min(fit*S.zoom*dpr,mx)}), cv=$("cv");
+  if(rtask){ try{rtask.cancel();}catch(e){} }
+  cv.style.width=Math.floor(base.width*fit*S.zoom)+"px"; cv.style.height=Math.floor(base.height*fit*S.zoom)+"px";
+  cv.width=vp.width; cv.height=vp.height;
+  rtask=S.pg.render({canvasContext:cv.getContext("2d"), viewport:vp});
+  try{ await rtask.promise; }catch(e){}
+  hl();
+}
+
+function hl(){
+  const ov=$("ov"); ov.innerHTML="";
+  if(!S.boxes||!S.hlr||!S.pg) return;
+  const f=$("cv").clientWidth/S.pg.getViewport({scale:1}).width;
+  for(let j=S.hlr.i; j<S.hlr.i+S.hlr.k && j<S.boxes.length; j++){
+    const b=S.boxes[j], d=document.createElement("div"); d.className="hl";
+    d.style.cssText=`left:${(b.x-1)*f}px;top:${(b.y-b.h*0.85)*f}px;width:${(b.w+2)*f}px;height:${b.h*1.05*f}px`;
+    ov.appendChild(d);
+  }
+  if(S.zoom>1 && !S.pinching && ov.firstChild){
+    const st=$("stage"), a=ov.firstChild.getBoundingClientRect(), r=st.getBoundingClientRect();
+    if(a.top<r.top+10||a.bottom>r.bottom-10||a.left<r.left+10||a.right>r.right-10)
+      st.scrollBy({top:(a.top+a.bottom)/2-(r.top+r.bottom)/2, left:(a.left+a.right)/2-(r.left+r.right)/2, behavior:"smooth"});
+  }
+}
+
+function setZoom(z){
+  S.zoom=Math.max(0.2,Math.min(10,z)); $("zr").textContent=Math.round(S.zoom*100)+"%";
+  if(!S.pg) return;
+  const b=S.pg.getViewport({scale:1}), cv=$("cv");
+  cv.style.width=Math.floor(b.width*S.fit*S.zoom)+"px"; cv.style.height=Math.floor(b.height*S.fit*S.zoom)+"px";
+  hl(); clearTimeout(rz); rz=setTimeout(draw,150);
+}
+
+async function showPage(n, idx=0){
+  S.tok++; syn.cancel(); clearTimeout(S.timer);
+  n = Math.max(1, Math.min(S.doc.numPages, n));
+  S.page = n; S.idx = idx;
+  S.pg = await S.doc.getPage(n); S.boxes = null; $("ov").innerHTML="";
+  await draw();
+  const tc = await S.pg.getTextContent();
+  const base = S.pg.getViewport({scale:1});
+  S.words = []; S.boxes = [];
+  for(const it of tc.items){
+    const str = it.str; if(!str.trim()) continue;
+    const t = pdfjsLib.Util.transform(base.transform, it.transform);
+    const h = Math.hypot(t[2],t[3]) || 10, w = it.width || 0, re = /\S+/g; let m;
+    while((m = re.exec(str))){ S.words.push(m[0]); S.boxes.push({x:t[4]+m.index/str.length*w, y:t[5], w:m[0].length/str.length*w, h}); }
+  }
+  S.hlr = {i:S.idx, k:chunkLen(S.idx)}; hl();
+  updatePg(); stats(); $("pgR").max=S.doc.numPages; $("pgR").value=n;
+  $("goto").value = n; $("goto").max = S.doc.numPages;
+  $("chunk").textContent = S.words.length ? "" : "No selectable text on this page";
+  $("chunk").classList.toggle("hide", !S.words.length || !$("show").checked);
+  save();
+}
+
+function nWords(){ return Math.max(1, parseInt($("n").value)||3); }
+const wpmVal=()=>Math.max(1, parseFloat($("wpm").value)||25);
+function chunkLen(i){
+  const k=nWords(); let c=0;
+  for(let j=i; j<S.words.length && c<k; j++){
+    c++; const w=S.words[j];
+    if($("brk").checked){ if(/[.!?]["”'’)\]]*$/.test(w)) break; if(c>=2 && /[,;:]["”'’)\]]*$/.test(w)) break; }
+  }
+  return c;
+}
+function prevStart(i){ let s0=0,last=0; while(s0<i){ last=s0; s0+=chunkLen(s0)||1; } return last; }
+const PM={",":"comma",".":"full stop",";":"semicolon",":":"colon","?":"question mark","!":"exclamation mark","(":"open bracket",")":"close bracket","[":"open bracket","]":"close bracket","“":"open quote","”":"close quote",'"':"quote","—":"dash","–":"dash"};
+function say(w,i){
+  if(!$("punc").checked) return w;
+  if(PM[w]) return PM[w];
+  let core=w, lead=[], trail=[], m;
+  while((m=core.match(/^[(\["“]/)) && core.length>1){ lead.push(PM[m[0]]); core=core.slice(1); }
+  if(/(\.\.\.|…)$/.test(core) && core.length>3){ core=core.replace(/(\.\.\.|…)$/,""); trail.push("dot dot dot"); }
+  while((m=core.match(/[,.;:!?)\]”"]$/)) && core.length>1){ trail.unshift(PM[m[0]]); core=core.slice(0,-1); }
+  const out=[...lead,core,...trail];
+  if($("cap").checked && /^[A-Z]/.test(core) && (i===0 || /[.!?]["”')\]]*$/.test(S.words[i-1]))) out.unshift("capital");
+  return out.join(" ");
+}
+function spoken(i,cnt){ return S.words.slice(i,i+cnt).map((w,j)=>say(w,i+j)).join(" "); }
+function updatePg(){ if(!S.doc) return; $("pg").innerHTML=`p ${S.page}/${S.doc.numPages}<br>w ${Math.min(S.idx,S.words.length)}/${S.words.length}`; }
+function stats(){
+  const t=S.words.join(" "), L=(t.match(/[A-Za-z]/g)||[]).length, c=(t.match(/,/g)||[]).length, sn=(t.match(/[.!?]+(?=\s|$)/g)||[]).length;
+  $("stats").innerHTML=`<b>This page:</b> ${S.words.length} words · ${sn} sentences · ${c} commas · ${L} letters`+(S.docWords?`<br><b>Whole PDF:</b> ${S.docWords} words`:"");
+}
+async function countAll(doc){
+  let tot=0; S.docWords=0;
+  for(let p=1;p<=doc.numPages;p++){
+    if(S.doc!==doc) return;
+    try{ const pg=await doc.getPage(p), tc=await pg.getTextContent(); tot+=tc.items.map(i=>i.str).join(" ").split(/\s+/).filter(Boolean).length; }catch(e){}
+  }
+  S.docWords=tot; stats();
+}
+
+function speak(text, done){
+  const t = S.tok, u = new SpeechSynthesisUtterance(text);
+  const v = syn.getVoices().find(x=>x.name===$("voice").value); if(v){ u.voice=v; u.lang=v.lang; }
+  u.rate = Math.max(0.1, Math.min(10, parseFloat($("rate").value)||1));
+  u.onend = ()=>{ if(t===S.tok) done(); };
+  u.onerror = ()=>{ if(t===S.tok) done(); };
+  syn.speak(u);
+}
+
+async function step(){
+  if(!S.playing) return;
+  if(S.idx >= S.words.length){
+    if(S.page >= S.doc.numPages){ stop(); $("chunk").textContent="Finished 🎉"; $("chunk").classList.remove("hide"); return; }
+    await showPage(S.page+1); return step();
+  }
+  const cnt = chunkLen(S.idx), text = S.words.slice(S.idx, S.idx+cnt).join(" "), sp = spoken(S.idx,cnt);
+  S.hlr = {i:S.idx, k:cnt}; hl(); S.last = sp; $("chunk").textContent = text; $("chunk").classList.toggle("hide", !$("show").checked);
+  const t = S.tok, t0 = Date.now();
+  speak(sp, ()=>{
+    S.idx += cnt; save(); updatePg();
+    const wait = Math.max(400, cnt*60000/wpmVal() - (Date.now()-t0));
+    S.timer = setTimeout(()=>{ if(t===S.tok) step(); }, wait);
+  });
+}
+
+function play(){ if(!S.doc) return; S.playing=true; $("play").textContent="⏸"; S.tok++; step(); }
+function stop(){ S.playing=false; S.tok++; syn.cancel(); clearTimeout(S.timer); $("play").textContent="▶"; }
+function jump(newIdx){
+  if(!S.doc) return; const was=S.playing; stop();
+  S.idx = Math.max(0, Math.min(S.words.length, newIdx)); save(); updatePg(); S.hlr = {i:S.idx, k:chunkLen(S.idx)}; hl();
+  if(was) play(); else $("chunk").textContent = S.words.slice(S.idx,S.idx+chunkLen(S.idx)).join(" ");
+}
+
+$("play").onclick = ()=> S.playing ? stop() : play();
+$("back").onclick = ()=> jump(prevStart(S.idx));
+$("next").onclick = ()=> jump(S.idx + (chunkLen(S.idx)||1));
+$("rep").onclick  = ()=> { if(!S.doc) return; const was=S.playing; stop(); S.playing=true; S.tok++; const t=S.tok;
+  speak(S.last || spoken(S.idx,chunkLen(S.idx)), ()=>{ if(t!==S.tok) return; S.playing=false; if(was) play(); }); };
+$("prevPg").onclick = async ()=>{ if(!S.doc) return; const was=S.playing; stop(); await showPage(S.page-1); if(was) play(); };
+$("nextPg").onclick = async ()=>{ if(!S.doc) return; const was=S.playing; stop(); await showPage(S.page+1); if(was) play(); };
+$("goto").onchange = async ()=>{ if(!S.doc) return; const was=S.playing; stop(); await showPage(parseInt($("goto").value)||1); if(was) play(); };
+["n","wpm","rate","voice","show","punc","brk","cap"].forEach(id=> $(id).addEventListener("change", ()=>{ saveSettings(); if((id==="n"||id==="brk") && S.doc && !S.playing){ S.hlr={i:S.idx,k:chunkLen(S.idx)}; hl(); } if(id==="show") $("chunk").classList.toggle("hide", !$("show").checked); }));
+function bindR(r,n){ r.oninput=()=>{ n.value=r.value; saveSettings(); }; n.addEventListener("change",()=>{ r.value=n.value; }); }
+bindR($("wpmR"),$("wpm")); bindR($("rateR"),$("rate"));
+$("pgR").oninput=()=>{ if(S.doc) $("pg").innerHTML=`p ${$("pgR").value}/${S.doc.numPages}`; };
+$("pgR").onchange=async()=>{ if(!S.doc) return; const was=S.playing; stop(); await showPage(parseInt($("pgR").value)||1); if(was) play(); };
+
+$("box").addEventListener("click", e=>{
+  if(!S.boxes || !S.boxes.length) return;
+  const r=$("cv").getBoundingClientRect(), f=r.width/S.pg.getViewport({scale:1}).width;
+  const px=(e.clientX-r.left)/f, py=(e.clientY-r.top)/f; let best=0, bd=1e12;
+  S.boxes.forEach((b,i)=>{
+    const top=b.y-b.h*.85, dx=px<b.x?b.x-px:(px>b.x+b.w?px-b.x-b.w:0), dy=py<top?top-py:(py>top+b.h?py-top-b.h:0);
+    const d=dx*dx+dy*dy*4; if(d<bd){ bd=d; best=i; }
+  });
+  jump(best);
+});
+$("zi").onclick=()=>setZoom(S.zoom*1.25);
+$("zo").onclick=()=>setZoom(S.zoom/1.25);
+$("zr").onclick=()=>setZoom(1);
+let pd=0, pz=1;
+const tdist=t=>Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+$("stage").addEventListener("touchstart",e=>{ if(e.touches.length===2){ pd=tdist(e.touches); pz=S.zoom; S.pinching=true; } },{passive:true});
+$("stage").addEventListener("touchmove",e=>{ if(e.touches.length===2 && pd) setZoom(pz*tdist(e.touches)/pd); },{passive:true});
+$("stage").addEventListener("touchend",e=>{ if(e.touches.length<2){ pd=0; setTimeout(()=>{S.pinching=false;},300); } },{passive:true});
+$("dots").onclick=e=>{ e.stopPropagation(); $("menu").hidden=!$("menu").hidden; };
+document.addEventListener("click",e=>{ if(!$("menu").hidden && !$("menu").contains(e.target)) $("menu").hidden=true; });
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape") $("menu").hidden=true;
+  if(["INPUT","SELECT"].includes(document.activeElement.tagName) && e.key!=="Escape") return;
+  if(e.code==="Space"){ e.preventDefault(); $("play").click(); }
+  else if(e.key==="ArrowLeft") $("back").click();
+  else if(e.key==="ArrowRight") $("next").click();
+  else if(e.key==="r"||e.key==="R") $("rep").click();
+});
+
+$("file").onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  stop(); $("empty").textContent = "Loading…"; $("empty").hidden = false;
+  try{
+    S.doc = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+  }catch(err){ $("empty").textContent = "Couldn’t open that PDF."; return; }
+  S.key = f.name+"|"+f.size; let p=1,i=0;
+  try{ const r=JSON.parse(localStorage.getItem("dict:"+S.key)||"null"); if(r){ p=r.p; i=r.i; } }catch(_){}
+  $("empty").hidden = true; $("cv").hidden = false;
+  await showPage(p, i); countAll(S.doc);
+  $("chunk").textContent = S.words.slice(S.idx,S.idx+chunkLen(S.idx)).join(" ");
+  $("chunk").classList.toggle("hide", !$("show").checked);
+};
+window.addEventListener("resize", ()=>{ clearTimeout(rz); rz=setTimeout(draw,120); });
+window.addEventListener("orientationchange", ()=>{ clearTimeout(rz); rz=setTimeout(draw,300); });
+if("serviceWorker" in navigator && location.protocol.startsWith("http")) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+<script src="jus-features.js"></script>
+</body>
+</html>
